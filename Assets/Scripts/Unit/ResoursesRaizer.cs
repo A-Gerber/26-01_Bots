@@ -8,7 +8,6 @@ public class ResoursesRaizer : MonoBehaviour
     private Resource _targetResource;
 
     public event Action PickUped;
-    public event Action Stoped;
     public event Action Puted;
 
     private void OnTriggerEnter(Collider other)
@@ -20,16 +19,13 @@ public class ResoursesRaizer : MonoBehaviour
             resource.PickUp(transform, _positionLoad);
             PickUped?.Invoke();
         }
-        else if (other.TryGetComponent(out ResourceWarehouse resourceWarehouse))
+        else if (other.TryGetComponent(out WarehouseResources resourceWarehouse))
         {
-            Stoped?.Invoke();
-
+            Puted?.Invoke();
+            _targetResource.Put();
             resourceWarehouse.TakeResource(_targetResource);
 
-            _targetResource.Put();
             _targetResource = null;
-
-            Puted?.Invoke();
             _isUnloaded = true;
         }
     }

@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class WarehouseView : MonoBehaviour
 {
-    [SerializeField] private ResourceWarehouse _warehouse;
+    [SerializeField] private WarehouseResources _warehouse;
     [SerializeField] private TMP_Text _score;
 
     private void OnEnable()

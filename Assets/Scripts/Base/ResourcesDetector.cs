@@ -1,31 +1,45 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ResourcesDetector
+public class ResourcesDetector : MonoBehaviour
 {
-    private Collider[] _hits;
-    private int _resourcesLayer = 1 << 6;
-    private int _count = 10;
+    [SerializeField] private float _searchRadius;
 
-    public ResourcesDetector()
+    private Collider[] _hits;
+    private List<Resource> _targets;
+    private int _resourcesLayer = 1 << 6;
+    private int _count = 100;
+
+    public event Action<List<Resource>> FindedResources;
+
+    private void Awake()
     {
         _hits = new Collider[_count];
+        _targets = new List<Resource>();
     }
 
-    public bool TryGetResourcesInRadius(out List<Resource> targets, Vector3 position, float radius)
+    public void SearchResources()
+    {
+        if(TryGetResourcesInRadius())
+        {
+            FindedResources?.Invoke(_targets);
+            _targets.Clear();
+        }
+    }
+
+    private bool TryGetResourcesInRadius()
     {
         bool isGot = false;
-        targets = new List<Resource>();
-
-        int count = Physics.OverlapSphereNonAlloc(position, radius, _hits, _resourcesLayer);
+        int count = Physics.OverlapSphereNonAlloc(transform.position, _searchRadius, _hits, _resourcesLayer);
 
         if (count > 0)
         {
             foreach (Collider hit in _hits)
             {
-                if (hit != null && hit.TryGetComponent(out Resource resource) && resource.gameObject.activeSelf && resource.IsFinded == false)
+                if (hit != null && hit.TryGetComponent(out Resource resource) && resource.IsFree)
                 {
-                    targets.Add(resource);
+                    _targets.Add(resource);
                     isGot = true;
                 }
             }

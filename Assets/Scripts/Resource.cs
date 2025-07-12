@@ -5,7 +5,7 @@ public class Resource : MonoBehaviour
 {
     public event Action<Resource> ReleasedResource;
 
-    public bool IsFinded { get; private set; } = false;
+    public bool IsFree { get; private set; } = true;
 
     public void PickUp(Transform parent, Vector3 positionLoad)
     {
@@ -16,17 +16,14 @@ public class Resource : MonoBehaviour
     public void Put()
     {
         transform.SetParent(null);
-        ReleasedResource?.Invoke(this);
+        IsFree = false;
     }
 
-    public void Reset()
-    {
-        transform.position = new Vector3(0f, 0f, 0f);
-        IsFinded = false;
-    }
+    public void Use() => ReleasedResource?.Invoke(this);
 
-    public void SetStatusFinded()
+    public void ResetSettings()
     {
-        IsFinded = true;
+        transform.SetParent(null);
+        IsFree = true;
     }
 }

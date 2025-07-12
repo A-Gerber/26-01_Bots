@@ -2,70 +2,68 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+[RequireComponent(typeof(ResourcesDetector))]
 public class Base : MonoBehaviour
 {
-    [SerializeField] private ResourceWarehouse _warehouse;
+    [SerializeField] private WarehouseResources _warehouse;
     [SerializeField] private List<Unit> _units;
-    [SerializeField] private float _searchRadius;
     [SerializeField] private float _delay;
 
     private ResourcesDetector _resourcesDetector;
-    private TargetsHandler _targetsHandler;
 
+    private Queue<Unit> _freeUnits;
     private WaitForSeconds _wait;
     private Coroutine _coroutine;
-    private int _countFreeUnit;
 
     private void Awake()
     {
-        _resourcesDetector = new ResourcesDetector();
-        _targetsHandler = new TargetsHandler();
+        _resourcesDetector = GetComponent<ResourcesDetector>();
 
         _wait = new WaitForSeconds(_delay);
-        _countFreeUnit = _units.Count;
+        _freeUnits = new Queue<Unit>();
     }
 
     private void OnEnable()
     {
-        _warehouse.ReceivedResource += DeleteTask;
+        foreach (var unit in _units)
+        {
+            unit.Released += AddFreeUnit;
+        }
+
+        _resourcesDetector.FindedResources += TransferFindedResources;
 
         _coroutine = StartCoroutine(SearchResourcesOverTime());
     }
 
     private void OnDisable()
     {
-        _warehouse.ReceivedResource -= DeleteTask;
+        foreach (var unit in _units)
+        {
+            unit.Released -= AddFreeUnit;
+        }
+
+        _resourcesDetector.FindedResources -= TransferFindedResources;
 
         StopCoroutine(_coroutine);
     }
 
-    private void DeleteTask(Resource resource)
-    {
-        _targetsHandler.DeletePerformedTasks(resource);
-        _countFreeUnit++;
-    }
+    private void TransferFindedResources(List<Resource> findedResources) => _warehouse.TakeFindedResources(findedResources);
+
+    private void AddFreeUnit(Unit unit) => _freeUnits.Enqueue(unit);
 
     private IEnumerator SearchResourcesOverTime()
     {
-        List<Resource> targets;
-
         while (gameObject.activeSelf)
         {
-            yield return _wait;
-
-            if (_countFreeUnit > 0 && _resourcesDetector.TryGetResourcesInRadius(out targets, transform.position, _searchRadius))
+            if (_freeUnits.Count > 0)
             {
-                _targetsHandler.TransferTargets(targets);
+                _resourcesDetector.SearchResources();
 
-                foreach (var unit in _units)
-                {
-                    if (unit.IsBusy == false && _targetsHandler.Count > 0)
-                    {
-                        unit.SetTarget(_targetsHandler.SetTarget());
-                        _countFreeUnit--;
-                    }
-                }
+                while (_warehouse.CountFreeResources > 0 && _freeUnits.Count > 0)
+                    _freeUnits.Dequeue().SetTarget(_warehouse.TranslateTargets());
             }
+
+            yield return _wait;
         }
     }
 }

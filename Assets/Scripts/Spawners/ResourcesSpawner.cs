@@ -38,7 +38,7 @@ public class ResourcesSpawner : Spawner <Resource>
     {
         base.OnRelease(resource);
 
-        resource.Reset();
+        resource.ResetSettings();
         resource.ReleasedResource -= Release;
     }
 

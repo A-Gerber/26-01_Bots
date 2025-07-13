@@ -51,7 +51,8 @@ public class Unit : MonoBehaviour
         IsBusy = true;
     }
 
-    private void ReturnToBase() => _targetPoint = _basePosition.position;
+    private void ReturnToBase() => 
+        _targetPoint = _basePosition.position;
 
     private void SetStatusFree()
     {

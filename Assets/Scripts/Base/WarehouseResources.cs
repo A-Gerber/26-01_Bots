@@ -4,11 +4,9 @@ using UnityEngine;
 
 public class WarehouseResources : MonoBehaviour
 {
-    [SerializeField] private Transform _container;
-    
-    private List<Resource> _extractedResources;
     private Queue<Resource> _freeResources;
     private List<Resource> _targetResources;
+    private int _countResources = 0;
 
     public event Action<int> ChangedCount;
 
@@ -16,7 +14,6 @@ public class WarehouseResources : MonoBehaviour
 
     private void Awake()
     {
-        _extractedResources = new List<Resource>();
         _freeResources = new Queue<Resource>();
         _targetResources = new List<Resource>();
     }
@@ -30,7 +27,7 @@ public class WarehouseResources : MonoBehaviour
         }
     }
 
-    public Resource TranslateTargets()
+    public Resource GetTarget()
     {
         Resource resource = _freeResources.Dequeue();
         _targetResources.Add(resource);
@@ -40,12 +37,10 @@ public class WarehouseResources : MonoBehaviour
 
     public void TakeResource(Resource resource)
     {
-        resource.transform.SetParent(_container);
-        resource.transform.localPosition = new Vector3();
-
-        _extractedResources.Add(resource);
+        _countResources++;
+        resource.Release();
         _targetResources.Remove(resource);
 
-        ChangedCount?.Invoke(_extractedResources.Count);
+        ChangedCount?.Invoke(_countResources);
     }
 }

@@ -37,7 +37,7 @@ public class ResourcesDetector : MonoBehaviour
         {
             foreach (Collider hit in _hits)
             {
-                if (hit != null && hit.TryGetComponent(out Resource resource) && resource.IsFree)
+                if (hit != null && hit.TryGetComponent(out Resource resource) && resource.gameObject.activeSelf)
                 {
                     _targets.Add(resource);
                     isGot = true;

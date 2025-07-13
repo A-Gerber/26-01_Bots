@@ -39,7 +39,7 @@ public class ResourcesSpawner : Spawner <Resource>
         base.OnRelease(resource);
 
         resource.ResetSettings();
-        resource.ReleasedResource -= Release;
+        resource.Released -= Release;
     }
 
     protected override void OnGet(Resource resource)
@@ -51,7 +51,7 @@ public class ResourcesSpawner : Spawner <Resource>
             _positionY,
             UnityEngine.Random.Range(_minPositionZ, _maxPositionZ + 1));
 
-        resource.ReleasedResource += Release;
+        resource.Released += Release;
     }
 
     private IEnumerator GetCubesOverTime()

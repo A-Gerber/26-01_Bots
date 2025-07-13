@@ -3,9 +3,7 @@ using UnityEngine;
 
 public class Resource : MonoBehaviour
 {
-    public event Action<Resource> ReleasedResource;
-
-    public bool IsFree { get; private set; } = true;
+    public event Action<Resource> Released;
 
     public void PickUp(Transform parent, Vector3 positionLoad)
     {
@@ -13,17 +11,9 @@ public class Resource : MonoBehaviour
         transform.localPosition = positionLoad;
     }
 
-    public void Put()
-    {
-        transform.SetParent(null);
-        IsFree = false;
-    }
+    public void Release() => 
+        Released?.Invoke(this);
 
-    public void Use() => ReleasedResource?.Invoke(this);
-
-    public void ResetSettings()
-    {
-        transform.SetParent(null);
-        IsFree = true;
-    }
+    public void ResetSettings() =>    
+        transform.SetParent(null);   
 }

@@ -22,7 +22,6 @@ public class ResoursesRaizer : MonoBehaviour
         else if (other.TryGetComponent(out WarehouseResources resourceWarehouse))
         {
             Puted?.Invoke();
-            _targetResource.Put();
             resourceWarehouse.TakeResource(_targetResource);
 
             _targetResource = null;
@@ -30,8 +29,6 @@ public class ResoursesRaizer : MonoBehaviour
         }
     }
 
-    public void SetTarget(Resource target)
-    {      
-        _targetResource = target;
-    }
+    public void SetTarget(Resource target) =>
+        _targetResource = target; 
 }

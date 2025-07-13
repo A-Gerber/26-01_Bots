@@ -47,9 +47,11 @@ public class Base : MonoBehaviour
         StopCoroutine(_coroutine);
     }
 
-    private void TransferFindedResources(List<Resource> findedResources) => _warehouse.TakeFindedResources(findedResources);
+    private void TransferFindedResources(List<Resource> findedResources) => 
+        _warehouse.TakeFindedResources(findedResources);
 
-    private void AddFreeUnit(Unit unit) => _freeUnits.Enqueue(unit);
+    private void AddFreeUnit(Unit unit) => 
+        _freeUnits.Enqueue(unit);
 
     private IEnumerator SearchResourcesOverTime()
     {
@@ -60,7 +62,7 @@ public class Base : MonoBehaviour
                 _resourcesDetector.SearchResources();
 
                 while (_warehouse.CountFreeResources > 0 && _freeUnits.Count > 0)
-                    _freeUnits.Dequeue().SetTarget(_warehouse.TranslateTargets());
+                    _freeUnits.Dequeue().SetTarget(_warehouse.GetTarget());
             }
 
             yield return _wait;

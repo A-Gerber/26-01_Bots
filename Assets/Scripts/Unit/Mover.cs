@@ -4,9 +4,9 @@ public class Mover : MonoBehaviour
 {    
     [SerializeField] private float _speed;
 
-    public void MoveToTarget(Vector3 targetPoint)
+    public void MoveToTarget(IFollowable target)
     {
-        transform.LookAt(targetPoint);
-        transform.position = Vector3.MoveTowards(transform.position, targetPoint, _speed * Time.deltaTime);
+        transform.LookAt(target.GetPosition());
+        transform.position = Vector3.MoveTowards(transform.position, target.GetPosition(), _speed * Time.deltaTime);
     }
 }

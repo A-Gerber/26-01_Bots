@@ -6,6 +6,7 @@ public class Spawner<T> : MonoBehaviour where T : MonoBehaviour
     protected ObjectPool<T> _pool;
 
     [SerializeField] private T _prefab;
+    [SerializeField] private Transform _container;
     [SerializeField] private int _poolCapacity = 5;
     [SerializeField] private int _poolMaxSize = 5;
 
@@ -29,11 +30,13 @@ public class Spawner<T> : MonoBehaviour where T : MonoBehaviour
     protected virtual void OnRelease(T @object)
     {
         @object.gameObject.SetActive(false);
+        @object.transform.SetParent(null);
     }
 
     protected virtual void OnGet(T @object)
     {
         @object.gameObject.SetActive(true);
+        @object.transform.SetParent(_container);
     }
 
     protected virtual void Get()

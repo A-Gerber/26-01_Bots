@@ -8,7 +8,7 @@ public class WarehouseView : MonoBehaviour
 
     private void OnEnable()
     {
-        _warehouse.ChangedCount += OnScoreChanged;
+        _warehouse.ChangedCount += OnScoreChanged;  
     }
 
     private void OnDisable()

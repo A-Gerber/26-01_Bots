@@ -1,62 +1,104 @@
 using System;
 using UnityEngine;
 
-[RequireComponent(typeof(Mover), typeof(ResoursesRaizer))]
+[RequireComponent(typeof(Mover), typeof(CollisionHandler), typeof(Rigidbody))]
 public class Unit : MonoBehaviour
 {
-    [SerializeField] private Transform _basePosition;
+    private Vector3 _positionLoad = new Vector3(0f, 0.75f, 0.5f);
+    private Base _base;
+    private Resource _targetResource;
+    private WarehouseResources _targetWarehouse;
+    private Flag _targetFlag;
+    private IFollowable _followTarget;
 
-    private Vector3 _targetPoint;
 
     private Mover _mover;
-    private ResoursesRaizer _resoursesRaizer;
+    private CollisionHandler _collisionHandler;
 
+    public event Action<Unit> BecomedFree;
     public event Action<Unit> Released;
+    public event Action<Unit> BuildedNewBase;
 
     public bool IsBusy { get; private set; } = false;
-
+    
     private void Awake()
     {
         _mover = GetComponent<Mover>();
-        _resoursesRaizer = GetComponent<ResoursesRaizer>();
-    }
-
-    private void Start()
-    {
-        Released?.Invoke(this);
+        _collisionHandler = GetComponent<CollisionHandler>();
     }
 
     private void OnEnable()
     {
-        _resoursesRaizer.PickUped += ReturnToBase;
-        _resoursesRaizer.Puted += SetStatusFree;
+        _collisionHandler.CollidedWithResource += PickUpResource;
+        _collisionHandler.CollidedWithWarehouse += PutResource;
+        _collisionHandler.CollidedWithFlag += BuildBase;
     }
 
     private void OnDisable()
     {
-        _resoursesRaizer.PickUped -= ReturnToBase;
-        _resoursesRaizer.Puted -= SetStatusFree;
+        _collisionHandler.CollidedWithResource -= PickUpResource;
+        _collisionHandler.CollidedWithWarehouse -= PutResource;
+        _collisionHandler.CollidedWithFlag -= BuildBase;
     }
 
     private void Update()
     {      
         if(IsBusy)        
-            _mover.MoveToTarget(_targetPoint);   
+            _mover.MoveToTarget(_followTarget);
     }
 
-    public void SetTarget(Resource target)
+    public Vector3 GetPositionFlag() =>
+        _targetFlag.transform.position;
+
+    public void SetStatusFree() =>
+        IsBusy = false;
+
+    public void SetBase(Base @base) =>
+        _base = @base;
+
+    public void MoveToFlag(Flag targetFlag)
     {
-        _resoursesRaizer.SetTarget(target);
-        _targetPoint = target.transform.position;
+        _targetFlag = targetFlag;     
+        _followTarget = targetFlag;
         IsBusy = true;
     }
 
-    private void ReturnToBase() => 
-        _targetPoint = _basePosition.position;
-
-    private void SetStatusFree()
+    public void ExtractResource(Resource target, WarehouseResources warehouseResources)
     {
-        IsBusy = false; 
-        Released?.Invoke(this);
+        _followTarget = target;
+        _targetResource = target;
+        _targetWarehouse = warehouseResources;
+        IsBusy = true;
+    }
+
+    private void BuildBase (Flag flag)
+    {
+        if (flag == _targetFlag)       
+            BuildedNewBase?.Invoke(this);                                           
+    }
+
+    private void PickUpResource(Resource resource)
+    {
+        if(resource == _targetResource)
+        {
+            _collisionHandler.SetLoaded(true);
+            resource.PickUp(transform, _positionLoad);
+
+            _followTarget = _base;
+        }
+    }
+
+    private void PutResource (WarehouseResources warehouse)
+    {
+        if (warehouse == _targetWarehouse)
+        {
+            IsBusy = false;
+            BecomedFree?.Invoke(this);
+
+            warehouse.TakeResource(_targetResource);
+
+            _targetResource = null;
+            _collisionHandler.SetLoaded(false);
+        }
     }
 }

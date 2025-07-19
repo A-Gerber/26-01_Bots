@@ -4,15 +4,16 @@ using UnityEngine;
 public class ResourcesSpawner : Spawner <Resource>
 {
     [SerializeField] private float _repeatRate;
+    [SerializeField] private int _minPositionX = -5;
+    [SerializeField] private int _maxPositionX = 20;
+    [SerializeField] private int _minPositionZ = -15;
+    [SerializeField] private int _maxPositionZ = 5;
 
     private WaitForSeconds _wait;
     private Coroutine _coroutine;
 
-    private int _positionY = 0;
-    private int _minPositionX = -5;
-    private int _maxPositionX = 20;
-    private int _minPositionZ = -15;
-    private int _maxPositionZ = 5;
+    private int _resourcesLayer = 6;    
+    private float _positionY = 0.25f;
 
     protected override void Awake()
     {
@@ -37,14 +38,15 @@ public class ResourcesSpawner : Spawner <Resource>
     protected override void OnRelease(Resource resource)
     {
         base.OnRelease(resource);
+        resource.ResetSettings();       
 
-        resource.ResetSettings();
         resource.Released -= Release;
     }
 
     protected override void OnGet(Resource resource)
     {
         base.OnGet(resource);
+        resource.gameObject.layer = _resourcesLayer;
 
         resource.transform.position = new Vector3(
             UnityEngine.Random.Range(_minPositionX, _maxPositionX + 1),

@@ -8,7 +8,8 @@ public class ResourcesDetector : MonoBehaviour
 
     private Collider[] _hits;
     private List<Resource> _targets;
-    private int _resourcesLayer = 1 << 6;
+    private int _numberLayerResource = 6;
+    private int _resourcesLayer;
     private int _count = 100;
 
     public event Action<List<Resource>> FindedResources;
@@ -17,6 +18,8 @@ public class ResourcesDetector : MonoBehaviour
     {
         _hits = new Collider[_count];
         _targets = new List<Resource>();
+
+        _resourcesLayer = 1 << _numberLayerResource;
     }
 
     public void SearchResources()
@@ -37,7 +40,7 @@ public class ResourcesDetector : MonoBehaviour
         {
             foreach (Collider hit in _hits)
             {
-                if (hit != null && hit.TryGetComponent(out Resource resource) && resource.gameObject.activeSelf)
+                if (hit != null && hit.TryGetComponent(out Resource resource) && resource.gameObject.layer == _numberLayerResource)
                 {
                     _targets.Add(resource);
                     isGot = true;

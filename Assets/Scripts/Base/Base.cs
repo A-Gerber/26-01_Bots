@@ -3,10 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(ResourcesDetector), typeof(UnitsSpawner))]
+[RequireComponent(typeof(ResourcesDetector), typeof(UnitsSpawner), typeof(ResourceStorage))]
 public class Base : MonoBehaviour, IFollowable
 {
-    [SerializeField] private WarehouseResources _warehouse;
+    [SerializeField] private BotRetreiver _botRetreiver;
     [SerializeField] private Flag _flag;
     [SerializeField] private float _delaySearch;
     [SerializeField] private int _countResourcesForNewUnit = 3;
@@ -15,6 +15,9 @@ public class Base : MonoBehaviour, IFollowable
 
     private ResourcesDetector _resourcesDetector;
     private UnitsSpawner _unitsSpawner;
+    private ResourceStorage _resourceStorage;
+    private ResourcesHandler _resourcesHandler;
+    private BasesSpawner _basesSpawner;
 
     private List<Unit> _units;
     private Queue<Unit> _freeUnits;
@@ -24,49 +27,49 @@ public class Base : MonoBehaviour, IFollowable
     private bool _isPriorityNewBase = false;
     private bool _isBuildedNewBase = false;
 
-    public event Action<List<Resource>> FindedResources;
-    public event Action<Base> BecomedFreeUnit;
     public event Action<Base> Released;
-    public event Action<Unit> BuildedNewBase;
 
     private void Awake()
     {
         _resourcesDetector = GetComponent<ResourcesDetector>();
         _unitsSpawner = GetComponent<UnitsSpawner>();
+        _resourceStorage = GetComponent<ResourceStorage>();
 
         _wait = new WaitForSeconds(_delaySearch);
         _units = new List<Unit>();
         _freeUnits = new Queue<Unit>();
-
-        foreach (var unit in _units)
-        {
-            Debug.Log(unit.name, unit);
-            _freeUnits.Enqueue(unit);
-        }
     }
 
     private void OnEnable()
     {
-        _resourcesDetector.FindedResources += TransferFindedResources;
-        _warehouse.CollectedResource += CreateUnit;
         _unitsSpawner.Created += AddUnit;
+        _botRetreiver.CollidedUnitWithResource += HandleUnitWithResource;
 
-        _coroutine = StartCoroutine(SearchResourcesOverTime());
+        _coroutine = StartCoroutine(SetTasksOverTime());
     }
 
     private void OnDisable()
     {
-        _resourcesDetector.FindedResources -= TransferFindedResources;
         _unitsSpawner.Created -= AddUnit;
+        _botRetreiver.CollidedUnitWithResource -= HandleUnitWithResource;
 
         StopCoroutine(_coroutine);
     }
 
+    public void Init(ResourcesHandler resourcesHandler, BasesSpawner basesSpawner)
+    {
+        _resourcesHandler = resourcesHandler;
+        _basesSpawner = basesSpawner;
+    }
+
+    public void Reset()
+    {
+        _resourcesHandler = null;
+        _basesSpawner = null;
+    }
+
     public Vector3 GetPosition() =>
         transform.position;
-
-    public void ExtractResource(Resource resource) =>
-        _freeUnits.Dequeue().ExtractResource(resource, _warehouse);
 
     public void CreateStartUnits()
     {
@@ -78,7 +81,6 @@ public class Base : MonoBehaviour, IFollowable
     public void AddUnit(Unit unit)
     {
         unit.SetBase(this);
-        unit.BecomedFree += AddFreeUnit;
         unit.BuildedNewBase += BuildNewBase;
 
         _units.Add(unit);
@@ -95,18 +97,36 @@ public class Base : MonoBehaviour, IFollowable
             if (_isBuildedNewBase == false)
             {
                 _isPriorityNewBase = true;
-                SetTask();
+                SetTaskUnits();
             }
         }
     }
 
-    private void SetTask()
+    private void HandleUnitWithResource(Unit unit)
+    {
+        unit.PutResource();
+        _resourceStorage.TakeResource();
+
+        _freeUnits.Enqueue(unit);
+        SetTaskUnits();
+
+        if (_isPriorityNewBase == false && _resourceStorage.CountResources >= _countResourcesForNewUnit)
+            CreateUnit();
+    }
+
+    private void CreateUnit()
+    {
+        _resourceStorage.SpendResources(_countResourcesForNewUnit);
+            _unitsSpawner.CreateUnit();
+    }
+
+    private void SetTaskUnits()
     {
         if (_freeUnits.Count > 0)
         {
-            if (_isPriorityNewBase && _warehouse.CountResources >= _countResourcesForNewBase && _isBuildedNewBase == false)
+            if (_isPriorityNewBase && _resourceStorage.CountResources >= _countResourcesForNewBase && _isBuildedNewBase == false)
             {
-                _warehouse.SpendResources(_countResourcesForNewBase);
+                _resourceStorage.SpendResources(_countResourcesForNewBase);
                 _freeUnits.Dequeue().MoveToFlag(_flag);
 
                 _isBuildedNewBase = true;
@@ -114,9 +134,12 @@ public class Base : MonoBehaviour, IFollowable
             }
             else
             {
+                Resource resource;
+
                 for (int i = 0; i < _freeUnits.Count; i++)
                 {
-                    BecomedFreeUnit?.Invoke(this);
+                    if(_resourcesHandler.TryGetFreeResource(out resource))                    
+                        _freeUnits.Dequeue().ExtractResource(resource);
                 }
             }
         }
@@ -124,43 +147,31 @@ public class Base : MonoBehaviour, IFollowable
 
     private void BuildNewBase(Unit unit)
     {
-        BuildedNewBase?.Invoke(unit);
+        _basesSpawner.CreateBase(unit, _flag.transform.position);
         RemoveUnit(unit);
         unit.SetStatusFree();
+
         _isBuildedNewBase = false;
+        _flag.gameObject.SetActive(false);
     }
 
-    private IEnumerator SearchResourcesOverTime()
+    private IEnumerator SetTasksOverTime()
     {
+        List<Resource> resources;
+
         while (gameObject.activeSelf)
         {
             yield return _wait;
 
-            if (_freeUnits.Count > 0)
-                _resourcesDetector.SearchResources();
+            if (_freeUnits.Count > 0 && _resourcesDetector.TryGetResourcesInRadius(out resources))
+                _resourcesHandler.HandleResources(resources);
 
-            SetTask();
-        }
-    }
-
-    private void TransferFindedResources(List<Resource> findedResources) =>
-        FindedResources?.Invoke(findedResources);
-
-    private void AddFreeUnit(Unit unit) =>
-        _freeUnits.Enqueue(unit);
-
-    private void CreateUnit()
-    {
-        if (_isPriorityNewBase == false && _warehouse.CountResources >= _countResourcesForNewUnit)
-        {
-            _warehouse.SpendResources(_countResourcesForNewUnit);
-            _unitsSpawner.CreateUnit();
+            SetTaskUnits();
         }
     }
 
     private void RemoveUnit(Unit unit)
     {
-        unit.BecomedFree -= AddFreeUnit;
         unit.BuildedNewBase -= BuildNewBase;
 
         _units.Remove(unit);

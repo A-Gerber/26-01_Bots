@@ -6,15 +6,12 @@ public class CollisionHandler : MonoBehaviour
     private bool _isLoaded = false;
 
     public event Action<Resource> CollidedWithResource;
-    public event Action<WarehouseResources> CollidedWithWarehouse;
     public event Action<Flag> CollidedWithFlag;
 
     private void OnTriggerEnter(Collider other)
     {
         if (_isLoaded == false && other.TryGetComponent(out Resource resource))
             CollidedWithResource?.Invoke(resource);
-        else if (other.TryGetComponent(out WarehouseResources resourceWarehouse))
-            CollidedWithWarehouse?.Invoke(resourceWarehouse);
         else if (other.TryGetComponent(out Flag flag))
             CollidedWithFlag?.Invoke(flag);
 

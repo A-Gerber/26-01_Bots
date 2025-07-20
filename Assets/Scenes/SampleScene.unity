@@ -423,7 +423,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _baseSpawner: {fileID: 1881469717}
-  _bases: []
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -1129,6 +1128,7 @@ MonoBehaviour:
   _container: {fileID: 1379553899}
   _poolCapacity: 5
   _poolMaxSize: 5
+  _resourcesHandler: {fileID: 684999804}
   _startPointBase: {x: 14.5, y: 0, z: 20.5}
 --- !u!1 &2117234458
 GameObject:

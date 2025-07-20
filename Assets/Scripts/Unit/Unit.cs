@@ -7,20 +7,18 @@ public class Unit : MonoBehaviour
     private Vector3 _positionLoad = new Vector3(0f, 0.75f, 0.5f);
     private Base _base;
     private Resource _targetResource;
-    private WarehouseResources _targetWarehouse;
     private Flag _targetFlag;
     private IFollowable _followTarget;
-
 
     private Mover _mover;
     private CollisionHandler _collisionHandler;
 
-    public event Action<Unit> BecomedFree;
     public event Action<Unit> Released;
     public event Action<Unit> BuildedNewBase;
 
     public bool IsBusy { get; private set; } = false;
-    
+    public bool IsLoaded { get; private set; } = false;
+
     private void Awake()
     {
         _mover = GetComponent<Mover>();
@@ -30,25 +28,20 @@ public class Unit : MonoBehaviour
     private void OnEnable()
     {
         _collisionHandler.CollidedWithResource += PickUpResource;
-        _collisionHandler.CollidedWithWarehouse += PutResource;
         _collisionHandler.CollidedWithFlag += BuildBase;
     }
 
     private void OnDisable()
     {
         _collisionHandler.CollidedWithResource -= PickUpResource;
-        _collisionHandler.CollidedWithWarehouse -= PutResource;
         _collisionHandler.CollidedWithFlag -= BuildBase;
     }
 
     private void Update()
-    {      
-        if(IsBusy)        
+    {
+        if (IsBusy)
             _mover.MoveToTarget(_followTarget);
     }
-
-    public Vector3 GetPositionFlag() =>
-        _targetFlag.transform.position;
 
     public void SetStatusFree() =>
         IsBusy = false;
@@ -58,47 +51,43 @@ public class Unit : MonoBehaviour
 
     public void MoveToFlag(Flag targetFlag)
     {
-        _targetFlag = targetFlag;     
+        _targetFlag = targetFlag;
         _followTarget = targetFlag;
         IsBusy = true;
     }
 
-    public void ExtractResource(Resource target, WarehouseResources warehouseResources)
+    public void ExtractResource(Resource target)
     {
         _followTarget = target;
         _targetResource = target;
-        _targetWarehouse = warehouseResources;
         IsBusy = true;
     }
 
-    private void BuildBase (Flag flag)
+    public void PutResource()
     {
-        if (flag == _targetFlag)       
-            BuildedNewBase?.Invoke(this);                                           
+        _targetResource.Release();
+        _targetResource = null;
+
+        IsBusy = false;
+        IsLoaded = false;
+        _collisionHandler.SetLoaded(IsLoaded);
+    }
+
+    private void BuildBase(Flag flag)
+    {
+        if (flag == _targetFlag)
+            BuildedNewBase?.Invoke(this);
     }
 
     private void PickUpResource(Resource resource)
     {
-        if(resource == _targetResource)
+        if (resource == _targetResource)
         {
-            _collisionHandler.SetLoaded(true);
+            IsLoaded = true;
+            _collisionHandler.SetLoaded(IsLoaded);
             resource.PickUp(transform, _positionLoad);
 
             _followTarget = _base;
-        }
-    }
-
-    private void PutResource (WarehouseResources warehouse)
-    {
-        if (warehouse == _targetWarehouse)
-        {
-            IsBusy = false;
-            BecomedFree?.Invoke(this);
-
-            warehouse.TakeResource(_targetResource);
-
-            _targetResource = null;
-            _collisionHandler.SetLoaded(false);
         }
     }
 }

@@ -1,19 +1,15 @@
 using System;
 using UnityEngine;
 
-public class WarehouseResources : MonoBehaviour
+public class ResourceStorage : MonoBehaviour
 {
     public event Action<int> ChangedCount;
-    public event Action CollectedResource;
 
     public int CountResources { get; private set; } = 0;
 
-    public void TakeResource(Resource resource)
+    public void TakeResource()
     {
         CountResources++;
-        resource.Release();
-
-        CollectedResource?.Invoke();
         ChangedCount?.Invoke(CountResources);
     }
 

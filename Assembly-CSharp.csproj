@@ -69,13 +69,14 @@
     <Compile Include="Assets\Scripts\Objects\Flag.cs" />
     <Compile Include="Assets\Scripts\ResourcesHandler.cs" />
     <Compile Include="Assets\Scripts\WarehouseView.cs" />
-    <Compile Include="Assets\Scripts\Base\WarehouseResources.cs" />
     <Compile Include="Assets\Scripts\Spawners\BasesSpawner.cs" />
     <Compile Include="Assets\Scripts\IFollowable.cs" />
     <Compile Include="Assets\Scripts\Objects\Resource.cs" />
+    <Compile Include="Assets\Scripts\Base\ResourceStorage.cs" />
     <Compile Include="Assets\Scripts\Unit\CollisionHandler.cs" />
     <Compile Include="Assets\Scripts\Unit\Unit.cs" />
     <Compile Include="Assets\Scripts\Base\ResourcesDetector.cs" />
+    <Compile Include="Assets\Scripts\Base\BotRetreiver.cs" />
     <Compile Include="Assets\Scripts\Objects\Ground.cs" />
   </ItemGroup>
   <ItemGroup>
